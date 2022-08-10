@@ -18,7 +18,7 @@ app.get('/', async(req, res)=>{
 
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = "mongodb+srv://elearning:EWA1CgP7wfsQYb76@cluster0.hc4xz.mongodb.net/?retryWrites=true&w=majority";
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -36,12 +36,36 @@ async function run(){
         const resultsCollection = client.db("elearning").collection("results");
         const paymentsCollection = client.db("elearning").collection("payments");
         const paymentsHistoryCollection = client.db("elearning").collection("paymentsHistory");
-        
 
+
+        // load parents list
         app.get("/parents", async(req, res)=>{
             const parents = await parentsCollection.find({}).toArray();
             res.send(parents);
         })
+        // load one parent list by _id
+        app.get("/parents/:id", async(req, res)=>{
+            const id = req.params.id;
+            const filter = {_id:new ObjectId(id)};
+            const result = await parentsCollection.findOne(filter);
+            res.send(result)
+        })
+
+        // load students list
+        app.get("/students", async(req, res)=>{
+            const students = await studentsCollection.find({}).toArray();
+            res.send(students);
+        })
+
+
+        // load teachers list
+        app.get("/teachers", async(req, res)=>{
+            const teachers = await teachersCollection.find({}).toArray();
+            res.send(teachers);
+        })
+
+
+
     }
     finally{
         //await client.close();
