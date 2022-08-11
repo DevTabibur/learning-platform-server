@@ -13,6 +13,7 @@ app.get('/', async(req, res)=>{
     res.send("Hello world!")
 });
 
+// my name is topu 
 // user:elearning
 // pswd:EWA1CgP7wfsQYb76
 
@@ -36,6 +37,13 @@ async function run(){
         const resultsCollection = client.db("elearning").collection("results");
         const paymentsCollection = client.db("elearning").collection("payments");
         const paymentsHistoryCollection = client.db("elearning").collection("paymentsHistory");
+        const usersCollection = client.db("elearning").collection("users");
+
+        //load all user
+        app.get("/users", async(req, res)=>{
+            const result = await usersCollection.find({}).toArray();
+            res.send(result)
+        })
 
 
         // 1.a => load parents list
