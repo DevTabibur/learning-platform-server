@@ -38,23 +38,56 @@ async function run(){
         const paymentsHistoryCollection = client.db("elearning").collection("paymentsHistory");
 
 
-        // load parents list
-        app.get("/parents", async(req, res)=>{
-            const parents = await parentsCollection.find({}).toArray();
-            res.send(parents);
-        })
-        // load one parent list by _id
+        // 1.a => load parents list
+        // app.get("/parents", async(req, res)=>{
+        //     const parents = await parentsCollection.find({}).toArray();
+        //     res.send(parents);
+        // })
+
+        // 1.b => load one parent list by _id
         app.get("/parents/:id", async(req, res)=>{
             const id = req.params.id;
             const filter = {_id:new ObjectId(id)};
             const result = await parentsCollection.findOne(filter);
             res.send(result)
         })
+        
+        // 1.c => for parents pagination pages and sizes
+        app.get("/parents", async(req, res)=>{
+            console.log('query', req.query)
+            const page = parseInt(req.query.page);
+            const size = parseInt(req.query.size);
+            // console.log('page, size', page, size)
+            const cursor = parentsCollection.find({});
+
+            let parents;
+            if(page || size){
+                parents = await cursor.skip(page*size).limit(size).toArray();
+            }
+            else{
+                parents = await cursor.toArray();
+            }
+            res.send(parents)
+        })
+        // 1.d => for count of parents pagination
+        app.get("/parentsCount", async(req, res)=>{
+            const count = await parentsCollection.estimatedDocumentCount();
+            res.send({count});
+        })
+
+
 
         // load students list
         app.get("/students", async(req, res)=>{
             const students = await studentsCollection.find({}).toArray();
             res.send(students);
+        })
+        // load one student list by _id
+        app.get("students/:id", async(req,res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)};
+            const result = await studentsCollection.findOne(filter);
+            res.send(result)
         })
 
 
@@ -62,6 +95,13 @@ async function run(){
         app.get("/teachers", async(req, res)=>{
             const teachers = await teachersCollection.find({}).toArray();
             res.send(teachers);
+        })
+        // load one teacher list by _id
+        app.get("/teachers/:id", async(req, res)=>{
+            const id = req.params.id;
+            const filter = {_id: new ObjectId(id)};
+            const result = await teachersCollection.findOne(filter);
+            res.send(result)
         })
 
 
