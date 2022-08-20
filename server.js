@@ -59,16 +59,16 @@ async function run() {
     const usersCollection = client.db("elearning").collection("users");
 
     // 1.a => load all user
-    app.get("/user",  async (req, res) => {
+    app.get("/user",   async (req, res) => {
       const result = await usersCollection.find({}).toArray();
       res.send(result);
     });
 
     // 1.b => load single user by _id
-    app.get("/user/:id", async(req, res)=>{
+    app.get("/userWithID/:id", verifyJWT, async(req, res)=>{
       const id = req.params.id;
-      const filter = {_id: ObjectId(id)};
-      const result = await usersCollection.findOne(filter);
+      const query = {_id: ObjectId(id)};
+      const result = await usersCollection.findOne(query);
       res.send(result);
     })
 
@@ -96,11 +96,20 @@ async function run() {
       res.send({ result, accessToken: token });
     });
 
+    // 1.d => get single data filtering by email
+    app.get("/userWithEmail/:email", verifyJWT,  async(req, res)=>{
+      const email = req.params.email;
+      const filter = {email : email};
+      const result = await usersCollection.findOne(filter);
+      res.send(result);
+    })
+
+
     // 2.a => load parents list
-    // app.get("/parents", async(req, res)=>{
-    //     const parents = await parentsCollection.find({}).toArray();
-    //     res.send(parents);
-    // })
+    app.get("/parents", async(req, res)=>{
+        const parents = await parentsCollection.find({}).toArray();
+        res.send(parents);
+    })
 
     // 2.b => load one parent list by _id
     app.get("/parents/:id", async (req, res) => {
