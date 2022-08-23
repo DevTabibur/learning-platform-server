@@ -57,6 +57,7 @@ async function run() {
       .db("elearning")
       .collection("paymentsHistory");
     const usersCollection = client.db("elearning").collection("users");
+    const tuitionServices = client.db("elearning").collection("tuitionServices");
 
     // 1.a => load all user
     app.get("/user",   async (req, res) => {
@@ -65,7 +66,7 @@ async function run() {
     });
 
     // 1.b => load single user by _id
-    app.get("/userWithID/:id", verifyJWT, async(req, res)=>{
+    app.get("/userWithID/:id",  async(req, res)=>{
       const id = req.params.id;
       const query = {_id: ObjectId(id)};
       const result = await usersCollection.findOne(query);
@@ -102,6 +103,26 @@ async function run() {
       const filter = {email : email};
       const result = await usersCollection.findOne(filter);
       res.send(result);
+    })
+
+    // 2.a => make admin API
+    app.put("/user/admin/:email",  async (req, res) => {
+      const email = req.params.email;
+      const filter = {email: email};
+      const options = {upsert: true}
+      const updateDoc = {
+        $set:{superRole: "admin"},
+      }
+      const result = await usersCollection.updateOne(filter, updateDoc, options);
+      res.send(result);
+    })
+
+    // 2.b => data load of ADMIN API
+    app.get("/user/admin/:email", async(req, res)=>{
+      const email = req.params.email;
+      const filter = {email: email};
+      const result = await usersCollection.findOne(filter);
+      res.send(result)
     })
 
 
@@ -169,6 +190,15 @@ async function run() {
       const result = await teachersCollection.findOne(filter);
       res.send(result);
     });
+
+    // load tuition services
+    app.get('/tuition-services', verifyJWT, async(req, res)=>{
+      const result = await tuitionServices.find({}).toArray();
+      res.send(result);
+    })
+
+
+
   } finally {
     //await client.close();
   }
