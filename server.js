@@ -33,9 +33,7 @@ const verifyJWT = (req, res, next) => {
   const token = authHeader.split(" ")[1];
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return (
-        res.status(403).send({ message: "forbidden" })
-      );
+      return res.status(403).send({ message: "forbidden" });
     }
     req.decoded = decoded;
     next();
@@ -48,7 +46,7 @@ async function run() {
     const parentsCollection = client.db("elearning").collection("parents");
     const studentsCollection = client.db("elearning").collection("students");
     const teachersCollection = client.db("elearning").collection("teachers");
-    const classesCollection = client.db("elearning").collection("classes");
+    const bookingsCollection = client.db("elearning").collection("bookings");
     const subjectsCollection = client.db("elearning").collection("subjects");
     const examsCollection = client.db("elearning").collection("exams");
     const resultsCollection = client.db("elearning").collection("results");
@@ -57,21 +55,23 @@ async function run() {
       .db("elearning")
       .collection("paymentsHistory");
     const usersCollection = client.db("elearning").collection("users");
-    const tuitionServices = client.db("elearning").collection("tuitionServices");
+    const tuitionServices = client
+      .db("elearning")
+      .collection("tuitionServices");
 
     // 1.a => load all user
-    app.get("/user",   async (req, res) => {
+    app.get("/user", async (req, res) => {
       const result = await usersCollection.find({}).toArray();
       res.send(result);
     });
 
     // 1.b => load single user by _id
-    app.get("/userWithID/:id",  async(req, res)=>{
+    app.get("/userWithID/:id", async (req, res) => {
       const id = req.params.id;
-      const query = {_id: ObjectId(id)};
+      const query = { _id: ObjectId(id) };
       const result = await usersCollection.findOne(query);
       res.send(result);
-    })
+    });
 
     // 1.c => update every user specific by email
     //save registered user in db
@@ -98,39 +98,42 @@ async function run() {
     });
 
     // 1.d => get single data filtering by email
-    app.get("/userWithEmail/:email", verifyJWT,  async(req, res)=>{
+    app.get("/userWithEmail/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
-      const filter = {email : email};
+      const filter = { email: email };
       const result = await usersCollection.findOne(filter);
       res.send(result);
-    })
+    });
 
     // 2.a => make admin API
-    app.put("/user/admin/:email",  async (req, res) => {
+    app.put("/user/admin/:email", async (req, res) => {
       const email = req.params.email;
-      const filter = {email: email};
-      const options = {upsert: true}
+      const filter = { email: email };
+      const options = { upsert: true };
       const updateDoc = {
-        $set:{superRole: "admin"},
-      }
-      const result = await usersCollection.updateOne(filter, updateDoc, options);
+        $set: { superRole: "admin" },
+      };
+      const result = await usersCollection.updateOne(
+        filter,
+        updateDoc,
+        options
+      );
       res.send(result);
-    })
+    });
 
     // 2.b => data load of ADMIN API
-    app.get("/user/admin/:email", async(req, res)=>{
+    app.get("/user/admin/:email", async (req, res) => {
       const email = req.params.email;
-      const filter = {email: email};
+      const filter = { email: email };
       const result = await usersCollection.findOne(filter);
-      res.send(result)
-    })
-
+      res.send(result);
+    });
 
     // 2.a => load parents list
-    app.get("/parents", async(req, res)=>{
-        const parents = await parentsCollection.find({}).toArray();
-        res.send(parents);
-    })
+    app.get("/parents", async (req, res) => {
+      const parents = await parentsCollection.find({}).toArray();
+      res.send(parents);
+    });
 
     // 2.b => load one parent list by _id
     app.get("/parents/:id", async (req, res) => {
@@ -192,13 +195,24 @@ async function run() {
     });
 
     // load tuition services
-    app.get('/tuition-services', verifyJWT, async(req, res)=>{
+    app.get("/tuition-services", async (req, res) => {
       const result = await tuitionServices.find({}).toArray();
       res.send(result);
-    })
+    });
 
+    // load all booking info
+    app.get("/booking", async (req, res) => {
+      const result = await bookingsCollection.find({}).toArray();
+      res.send(result);
+    });
 
+    // send booking info server to db
+    app.post("/booking", async (req, res) => {
+      const result = await bookingsCollection.insertOne(req.body);
+      res.send({ result, code: 200 });
+    });
 
+    
   } finally {
     //await client.close();
   }
