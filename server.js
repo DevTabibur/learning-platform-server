@@ -43,18 +43,19 @@ const verifyJWT = (req, res, next) => {
 async function run() {
   try {
     await client.connect();
+    const usersCollection = client.db("elearning").collection("users");
     const parentsCollection = client.db("elearning").collection("parents");
     const studentsCollection = client.db("elearning").collection("students");
     const teachersCollection = client.db("elearning").collection("teachers");
     const bookingsCollection = client.db("elearning").collection("bookings");
     const subjectsCollection = client.db("elearning").collection("subjects");
+    const libraryCollection = client.db("elearning").collection("library");
     const examsCollection = client.db("elearning").collection("exams");
     const resultsCollection = client.db("elearning").collection("results");
     const paymentsCollection = client.db("elearning").collection("payments");
     const paymentsHistoryCollection = client
       .db("elearning")
       .collection("paymentsHistory");
-    const usersCollection = client.db("elearning").collection("users");
     const tuitionServices = client
       .db("elearning")
       .collection("tuitionServices");
@@ -106,7 +107,7 @@ async function run() {
     });
 
     // 2.a => make admin API
-    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+    app.put("/user/admin/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const options = { upsert: true };
@@ -220,6 +221,23 @@ async function run() {
       const result = await bookingsCollection.insertOne(req.body);
       res.send({ result, code: 200 });
     });
+
+
+    // get library collection
+    app.get("/library" , async(req, res)=>{
+      const result = await libraryCollection.find({}).toArray();
+      res.send(result)
+    })
+
+    // post library books to server to db
+    app.post("/library", async(req, res)=>{
+      const data = req.body;
+      console.log('data', data);
+      const result = await libraryCollection.insertOne(data);
+      res.send(result)
+    })
+
+
   } finally {
     //await client.close();
   }
