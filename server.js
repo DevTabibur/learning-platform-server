@@ -106,7 +106,7 @@ async function run() {
     });
 
     // 2.a => make admin API
-    app.put("/user/admin/:email", async (req, res) => {
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
       const options = { upsert: true };
@@ -118,16 +118,25 @@ async function run() {
         updateDoc,
         options
       );
-      res.send(result);
+      res.send({ result, code: 200 });
     });
 
-    // 2.b => data load of ADMIN API
-    app.get("/user/admin/:email", async (req, res) => {
+    // 2.b => check ADMIN API
+    app.get("/admin/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
-      const result = await usersCollection.findOne(filter);
-      res.send(result);
+      const user = await usersCollection.findOne(filter);
+      const isAdmin = user.superRole === "admin";
+      res.send({ admin: isAdmin });
     });
+
+    // 2.c => remove user
+    app.delete("/user/:id", async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id:ObjectId(id)}
+      const result = await usersCollection.deleteOne(filter);
+      res.send(result)
+    })
 
     // 2.a => load parents list
     app.get("/parents", async (req, res) => {
@@ -211,8 +220,6 @@ async function run() {
       const result = await bookingsCollection.insertOne(req.body);
       res.send({ result, code: 200 });
     });
-
-    
   } finally {
     //await client.close();
   }
