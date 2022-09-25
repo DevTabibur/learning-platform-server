@@ -48,6 +48,7 @@ async function run() {
     const studentsCollection = client.db("elearning").collection("students");
     const teachersCollection = client.db("elearning").collection("teachers");
     const bookingsCollection = client.db("elearning").collection("bookings");
+    const messagesCollection = client.db("elearning").collection("message");
     const subjectsCollection = client.db("elearning").collection("subjects");
     const libraryCollection = client.db("elearning").collection("library");
     const examsCollection = client.db("elearning").collection("exams");
@@ -132,12 +133,12 @@ async function run() {
     });
 
     // 2.c => remove user
-    app.delete("/user/:id", async(req, res)=>{
+    app.delete("/user/:id", async (req, res) => {
       const id = req.params.id;
-      const filter = {_id:ObjectId(id)}
+      const filter = { _id: ObjectId(id) };
       const result = await usersCollection.deleteOne(filter);
-      res.send(result)
-    })
+      res.send(result);
+    });
 
     // 2.a => load parents list
     app.get("/parents", async (req, res) => {
@@ -222,20 +223,39 @@ async function run() {
       res.send({ result, code: 200 });
     });
 
-
     // get library collection
-    app.get("/library" , async(req, res)=>{
+    app.get("/library", async (req, res) => {
       const result = await libraryCollection.find({}).toArray();
-      res.send(result)
-    })
+      res.send(result);
+    });
+
+    // load single library collection by id
+    app.get("/library/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const result = await libraryCollection.findOne(filter);
+      res.send(result);
+    });
 
     // post library books to server to db
-    app.post("/library", async(req, res)=>{
+    app.post("/library", async (req, res) => {
       const data = req.body;
-      console.log('data', data);
       const result = await libraryCollection.insertOne(data);
-      res.send(result)
-    })
+      res.send(result);
+    });
+
+    // load messages collections
+    app.get("/messages", async (req, res) => {
+      const result = await messagesCollection.find({}).toArray();
+      res.send(result);
+    });
+
+    // post messages server to db
+    app.post("/messages", async (req, res) => {
+      const data = req.body;
+      const result = await messagesCollection.insertOne(data);
+      res.send(result);
+    });
 
 
   } finally {
