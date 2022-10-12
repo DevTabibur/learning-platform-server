@@ -1,13 +1,74 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const app = express();
-const port = process.env.PORT || 5000;
+const { addUser, removeUser, getUserById } = require("./Users");
 const jwt = require("jsonwebtoken");
 
+const port = process.env.PORT || 5000;
+const app = express();
 // middleware
 app.use(cors());
 app.use(express.json());
+// socket
+const http = require("http");
+const { Server } = require("socket.io");
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+  },
+});
+
+// socket connection
+io.on("connection", (socket) => {
+  // console.log("new user connected");
+
+  socket.on("join", ({ name, room }, callback) => {
+    console.log("join request", name);
+    const { error, user } = addUser({ id: socket.id, name, room });
+    if (error) {
+      callback(error);
+    }
+    socket.join(room);
+    socket.emit("message", {
+      user: "System",
+      text: `Welcome ${name} to ${room}`,
+    });
+    socket.broadcast.to(room).emit("message", {
+      user: "System",
+      text: `${name} just joined ${room}`,
+    });
+
+    callback();
+  });
+
+  // get messages
+  socket.on("message", (message) => {
+    const user = getUserById(socket.id);
+    io.to(user?.room).emit("message", {
+      user: user?.name,
+      text: message,
+    });
+    console.log("message : ", message);
+  });
+
+  // user disconnect
+  socket.on("disconnect", () => {
+    console.log("user disconnected");
+    const user = removeUser(socket.id);
+
+    if(user){
+      io.to(user?.room).emit("message", {
+        user: "System",
+        text: `${user?.name} just left ${user?.room}`,
+      });
+    }
+    
+
+
+  });
+});
 
 app.get("/", async (req, res) => {
   res.send("Hello world!");
@@ -17,8 +78,7 @@ app.get("/", async (req, res) => {
 // pswd:EWA1CgP7wfsQYb76
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri =
-  "mongodb+srv://elearning:EWA1CgP7wfsQYb76@cluster0.hc4xz.mongodb.net/?retryWrites=true&w=majority";
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hc4xz.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -256,14 +316,12 @@ async function run() {
       const result = await messagesCollection.insertOne(data);
       res.send(result);
     });
-
-
   } finally {
     //await client.close();
   }
 }
 run().catch(console.dir);
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server running on port ${port}`);
 });
