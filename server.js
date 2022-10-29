@@ -1,17 +1,21 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { addUser, removeUser, getUserById } = require("./Users");
 const jwt = require("jsonwebtoken");
+
+const { addUser, removeUser, getUserById } = require("./Users");
 
 const port = process.env.PORT || 5000;
 const app = express();
 // middleware
 app.use(cors());
 app.use(express.json());
+
 // socket
 const http = require("http");
 const { Server } = require("socket.io");
+const dbConnect = require("./utils/dbConnect");
+const router = require("./routes/v1/user.route");
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
@@ -58,31 +62,13 @@ io.on("connection", (socket) => {
     console.log("user disconnected");
     const user = removeUser(socket.id);
 
-    if(user){
+    if (user) {
       io.to(user?.room).emit("message", {
         user: "System",
         text: `${user?.name} just left ${user?.room}`,
       });
     }
-    
-
-
   });
-});
-
-app.get("/", async (req, res) => {
-  res.send("Hello world!");
-});
-
-// user:elearning
-// pswd:EWA1CgP7wfsQYb76
-
-const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hc4xz.mongodb.net/?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-  serverApi: ServerApiVersion.v1,
 });
 
 const verifyJWT = (req, res, next) => {
@@ -99,6 +85,21 @@ const verifyJWT = (req, res, next) => {
     next();
   });
 };
+
+app.get("/", async (req, res) => {
+  res.send("Hello world!");
+});
+
+// user:elearning
+// pswd:EWA1CgP7wfsQYb76
+
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.hc4xz.mongodb.net/?retryWrites=true&w=majority`;
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
 
 async function run() {
   try {
@@ -270,6 +271,12 @@ async function run() {
       const result = await tuitionServices.find({}).toArray();
       res.send(result);
     });
+
+    app.post("tuition-services", async(req, res)=>{
+      console.log('req.body', req, body)
+      const result = await tuitionServices.insertOne(req.body);
+      res.send(result)
+    })
 
     // load all booking info
     app.get("/booking", async (req, res) => {
