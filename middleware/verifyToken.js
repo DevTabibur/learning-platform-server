@@ -11,7 +11,9 @@ module.exports = async (req, res, next) => {
      * 4. if valid call next()
      */
 
-    const token = JSON.parse(req.headers?.authorization?.split(" ")?.[1]) || req.headers?.authorization?.split(" ")?.[1]
+    const token =
+      JSON.parse(req.headers?.authorization?.split(" ")?.[1]) ||
+      req.headers?.authorization?.split(" ")?.[1];
     if (!token) {
       return res.status(401).json({
         status: "failed",
